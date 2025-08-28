@@ -1,0 +1,22 @@
+{
+	"name": "C++",
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
+    // To forward a port from a container into WSL2, not into Windows.
+    // Desktop/Rancher Desktop forwards 50051 to Windows automatically.
+    "runArgs": ["-p", "50051:50051"],
+	"remoteUser": "root",
+	"mounts": ["type=bind,source=${localWorkspaceFolder}/../../.conan2,target=/root/.conan2"],
+	"postStartCommand": "conan install . --output-folder=build --build=missing -pr:h .devcontainer/conan-profile-debug -pr:b .devcontainer/conan-profile-debug",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.cpptools-extension-pack"
+            ]
+        }
+    },
+    "containerEnv": {
+        "SERVER_ADDRESS": "localhost:50051"
+    }
+}

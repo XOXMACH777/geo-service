@@ -1,0 +1,9 @@
+services:
+  geo-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime_service # Build only the runtime stage
+    ports:
+      - "50051:50051"
+    user: root

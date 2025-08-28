@@ -1,0 +1,8 @@
+[requires]
+grpc/1.65.0
+libcurl/8.9.1
+rapidjson/cci.20230929
+
+[generators]
+CMakeDeps
+CMakeToolchain

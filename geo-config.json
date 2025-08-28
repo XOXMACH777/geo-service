@@ -1,0 +1,9 @@
+{
+    "overpass-endpoint": "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+    "nominatim-endpoint": "https://nominatim.openstreetmap.org/lookup",
+    "openmeteo-endpoint": "https://archive-api.open-meteo.com/v1/archive",
+    "_comment": "Note - limits optimized for total load time of data on the maximum allowed area and not for stream smoothness",
+    "maxBoxWidth": 10,
+    "maxBoxHeight": 10,
+    "maxOngoingWeatherRequests": 5
+}

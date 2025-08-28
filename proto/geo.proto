@@ -1,0 +1,148 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package geoproto;
+
+// Point represents a geographical coordinate with latitude and longitude.
+message Point
+{
+   double latitude = 1;  // Latitude in decimal degrees.
+   double longitude = 2; // Longitude in decimal degrees.
+}
+
+// Place represents a geographical entity, such as a city or region.
+message Place
+{
+   // TaggedFeature represents a geographical feature with a position and metadata tags.
+   message TaggedFeature
+   {
+      Point position = 1; // Geographical position of the feature.
+      map<string, string> tags = 2; // Metadata tags associated with the feature (e.g., "type": "airport").
+   }
+
+   string name = 1;       // Localized name of the place.
+   string name_en = 2;    // English name of the place.
+   string country = 3;    // Localized name of the country where the place is located.
+   string country_en = 4; // English name of the country where the place is located.
+   Point center = 5;      // Geographical center of the place.
+   repeated TaggedFeature features = 6; // List of tagged features within the place.
+}
+
+// Weather represents weather information, usually in relation to specific Place and time.
+message Weather
+{
+   double max_temperature = 1;         // Maximum temperature.
+   double min_temperature = 2;         // Minimum temperature.
+   double average_temperature = 3;     // Average temperature.
+}
+
+// CitiesRequest is used to request information about cities.
+message CitiesRequest
+{
+   oneof request
+   {
+      Point position = 1; // Search for cities near this geographical point.
+      string name = 2;    // Search for cities by localized or English name (e.g., "München" or "Munich").
+   }
+
+   optional bool include_details = 3; // If true, include detailed information about the cities.
+}
+
+// CitiesResponse contains a list of cities matching the request.
+message CitiesResponse
+{
+   repeated Place cities = 1; // List of cities matching the search criteria.
+}
+
+// RegionsRequest is used to request information about regions within a square box.
+message RegionsRequest
+{
+   // Central point of the square box.
+   Point position = 1;
+
+   // Half width (and height) of the square box in kilometers. Valid range is (0;1000].
+   uint32 distance_km = 2;
+
+   // Preferences defines search preferences for filtering regions.
+   message Preferences
+   {
+      // GeographicalFeature represents types of geographical features to include in the search.
+      enum GeographicalFeature
+      {
+         GEOGRAPHICAL_FEATURE_UNSPECIFIED = 0; // No specific feature requested.
+         GEOGRAPHICAL_FEATURE_INTERNATIONAL_AIRPORTS = 1; // Include regions with international airports.
+         GEOGRAPHICAL_FEATURE_PEAKS = 2; // Include regions with significant mountain peaks.
+         GEOGRAPHICAL_FEATURE_SEA_BEACHES = 4; // Include regions with sea beaches.
+         GEOGRAPHICAL_FEATURE_SALT_LAKES = 8; // Include regions with salt lakes.
+      }
+      uint32 mask = 1; // Bitmask to specify which features to include (e.g., 1 | 2 for airports and peaks).
+                       // At least one feature must be included.
+      map<string, string> properties = 2; // Additional properties for filtering (e.g., "minPeakHeight": "1000").
+   }
+
+   // Preferences for filtering regions.
+   Preferences prefs = 3;
+}
+
+// RegionsResponse contains a list of regions matching the request.
+message RegionsResponse
+{
+   repeated Place regions = 1; // List of regions matching the search criteria.
+}
+
+// WeatherRequest is used to request weather forecast in specific places and dates.
+// Actual forecasts are only available for a few weeks into the future.
+// Therefore, this API uses average historical weather for the same dates to predict the future.
+// Historical weather is requested and aggregated for given range of dates for N most recent years.
+//
+// Example input:
+// - Current date on system clock is 2026-01-01;
+// - Location is Zelenograd;
+// - Request dates are from 2026-06-01 to 2026-06-10;
+// - Number of years is 3;
+//
+// Example output:
+// - A single set of weather values (min, max and average temperature)
+//   aggregated from 2025-06-01 to 2025-06-10, from 2024-06-01 to 2024-06-10, and from 2023-06-01 to 2023-06-10.
+//
+// Historical weather information is aggregated into single set of values for each requested location.
+// Weather.max_temperature is maximum of all temperatures for this location.
+// Weather.average_temperature is average of all temperatures for this location.
+// Weather.min_temperature is minimum of all temperatures for this location.
+message WeatherRequest
+{
+   // Locations to request weather.
+   repeated Point locations = 1;
+
+   // Time range to request weather (UTC).
+   google.protobuf.Timestamp from_date = 2;
+   google.protobuf.Timestamp to_date = 3;
+
+   // Number of years to request when collecting historical weather.
+   uint32 num_years = 4;
+}
+
+// Weather response.
+message WeatherResponse
+{
+   // Aggregated weather information for each given location.
+   // See WeatherRequest description for details.
+   repeated Weather historical_weather = 1;
+}
+
+// Geo provides geographical services, such as finding cities and regions.
+service Geo
+{
+   // GetCities returns a list of cities based on the request criteria.
+   rpc GetCities(CitiesRequest) returns (CitiesResponse) {}
+
+   // GetRegions returns a list of regions within a specified square box.
+   rpc GetRegions(RegionsRequest) returns (RegionsResponse) {}
+
+   // GetRegionsStream streams regions within a specified square box as they are found.
+   rpc GetRegionsStream(RegionsRequest) returns (stream RegionsResponse) {}
+
+   // GetWeather returns a list of weather information for specific places and times.
+   rpc GetWeather(WeatherRequest) returns (WeatherResponse) {}
+}

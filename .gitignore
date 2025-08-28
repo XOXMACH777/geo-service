@@ -1,0 +1,9 @@
+CMakeUserPresets.json
+build/
+proto/geo*.cc
+proto/geo*.h
+proto/geo*.py
+.cache/
+.vscode/
+tests/.venv
+proto/__pycache__
